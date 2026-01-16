@@ -33,6 +33,7 @@ func main() {
 		AllowOrigins: "*", // หรือกำหนดเป็น "http://localhost:5173"
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 	}))
+	// test add api
 	routers.SetupRoute(app)
 	log.Fatal(app.Listen(":8000"))
 }
