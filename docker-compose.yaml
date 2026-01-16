@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgresDB
+    environment:
+      POSTGRES_USER: spidermanskko
+      POSTGRES_PASSWORD: antmanskko
+      POSTGRES_DB: narcoDB
+    restart: always
+    ports:
+      - "5432:5432" # map port container → host
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: dev
+      MINIO_ROOT_PASSWORD: devpassword
+    volumes:
+      - minio_data:/data
+
+  api:
+    build: ./api
+    container_name: go_api_narco
+    restart: always
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: dev
+      MINIO_SECRET_KEY: devpassword
+      APP_ENV: prod
+    depends_on:
+      - db
+      - minio
+    ports:
+      - "8000:8000"
+
+  web:
+    build: ./web
+    container_name: narco_web
+    restart: always
+    ports:
+      - "8088:80"
+
+volumes:
+  minio_data:
+  db_data:
