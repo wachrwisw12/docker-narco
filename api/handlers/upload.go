@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"path/filepath"
+	"fmt"
 	"time"
 
 	"api-naco/storage"
@@ -12,32 +12,32 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func UploadMedia(c *fiber.Ctx) error {
+func UploadHandler(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
-		return fiber.NewError(400, "file is required")
+		return c.Status(400).JSON(fiber.Map{"error": "file required"})
 	}
 
-	// ตรวจ size (10MB)
-	if file.Size > 10*1024*1024 {
-		return fiber.NewError(400, "file too large")
+	// 🔐 limit size (เช่น 50MB)
+	if file.Size > 50*1024*1024 {
+		return c.Status(400).JSON(fiber.Map{"error": "file too large"})
 	}
-
-	ext := filepath.Ext(file.Filename)
-	objectName := uuid.New().String() + ext
 
 	src, err := file.Open()
 	if err != nil {
-		return fiber.NewError(500, "cannot open file")
+		return err
 	}
 	defer src.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	objectName := fmt.Sprintf(
+		"uploads/%s/%s",
+		time.Now().Format("2006/01/02"),
+		uuid.NewString()+"_"+file.Filename,
+	)
 
-	info, err := storage.Minio.PutObject(
-		ctx,
-		"reports-media",
+	_, err = storage.Minio.PutObject(
+		context.Background(),
+		storage.Bucket,
 		objectName,
 		src,
 		file.Size,
@@ -46,12 +46,11 @@ func UploadMedia(c *fiber.Ctx) error {
 		},
 	)
 	if err != nil {
-		return fiber.NewError(500, "upload failed")
+		return err
 	}
 
 	return c.JSON(fiber.Map{
-		"success":  true,
-		"filename": objectName,
-		"size":     info.Size,
+		"path": objectName,
+		"size": file.Size,
 	})
 }

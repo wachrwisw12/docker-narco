@@ -8,6 +8,7 @@ import (
 
 func SetupNarcoticsReport(nacoticRoute fiber.Router) {
 	nacoticRoute.Post("/sendreport", handlers.SendReport)
+
 	nacoticRoute.Get("/test", handlers.Test)
 }
 

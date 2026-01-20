@@ -11,16 +11,20 @@ import (
 )
 
 type SendReportRequest struct {
-	Message string `json:"content_detail"`
+	Details string `json:"details"`
 }
 
 func SendReport(c *fiber.Ctx) error {
-	var req SendReportRequest
-
-	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+	req := SendReportRequest{
+		Details: c.FormValue("details"),
 	}
-
+	if req.Details == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "missing required fields")
+	}
+	filse, err := c.FormFile("file")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "file required")
+	}
 	// if len(req.Message) < 10 {
 	// 	return fiber.NewError(
 	// 		fiber.StatusBadRequest,
@@ -39,9 +43,9 @@ func SendReport(c *fiber.Ctx) error {
 	RETURNING id,  details ,tracking_code
 	`
 
-	err := db.DB.QueryRow(ctx, query, req.Message).Scan(
+	err = db.DB.QueryRow(ctx, query, req.Details).Scan(
 		&report.ID,
-		&report.ContentDetail,
+		&report.Details,
 		&report.TrackingCode,
 	)
 	if err != nil {
@@ -54,6 +58,7 @@ func SendReport(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"success": true,
 		"data":    report,
+		"files":   filse,
 	})
 }
 
@@ -83,7 +88,7 @@ func Test(c *fiber.Ctx) error {
 		var r models.NacorticsReport
 		if err := rows.Scan(
 			&r.ID,
-			&r.ContentDetail,
+			&r.Details,
 		); err != nil {
 			return fiber.NewError(
 				fiber.StatusInternalServerError,

@@ -1,7 +1,7 @@
 package models
 
 type NacorticsReport struct {
-	ID            string `json:"id"`
-	ContentDetail string `json:"details"`
-	TrackingCode  string `json:"tracking_code"`
+	ID           string `json:"id"`
+	Details      string `json:"details"`
+	TrackingCode string `json:"tracking_code"`
 }
