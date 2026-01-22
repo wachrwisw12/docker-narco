@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"api-naco/config"
 	"api-naco/models"
 	"api-naco/services"
 
@@ -24,11 +25,18 @@ func Registerhandler(c *fiber.Ctx) error {
 
 func Authhandler(c *fiber.Ctx) error {
 	var body models.AuthRequest
+
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request json body"})
+		return c.Status(fiber.StatusBadRequest).
+			JSON(fiber.Map{"error": "invalid request json body"})
 	}
 
-	return c.JSON(fiber.Map{
-		"status": "ok",
-	})
+	result, err := services.AuthLoginService(config.Cfg, body)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(result)
 }

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"api-naco/config"
 	"api-naco/db"
+	middlewares "api-naco/midleware"
 	"api-naco/models"
 
 	"golang.org/x/crypto/bcrypt"
@@ -61,4 +63,61 @@ func hashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hashed), nil
+}
+
+func AuthLoginService(
+	cfg *config.Config,
+	req models.AuthRequest,
+) (*models.AuthResponse, error) {
+	user, err := findUserByUsername(req.Username)
+	if err != nil {
+		return nil, errors.New("ไม่พบผู้ใช้งาน")
+	}
+
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(req.Password),
+	); err != nil {
+		return nil, errors.New("รหัสผ่านไม่ถูกต้อง")
+	}
+
+	token, err := middlewares.GenerateJWT(cfg, user.ID, user.Role)
+	if err != nil {
+		return nil, errors.New("ไม่สามารถสร้าง token ได้")
+	}
+
+	user.Password = ""
+
+	return &models.AuthResponse{
+		Token: token,
+		Role:  user.Role,
+		User:  *user,
+	}, nil
+}
+
+func findUserByUsername(username string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `
+	SELECT u.id, u.username, u.password, u.role_id ,r.role_name
+	FROM users u
+    LEFT JOIN roles r ON r.id=u.role_id
+	WHERE username = $1
+	LIMIT 1
+	`
+
+	var u models.User
+	err := db.DB.QueryRow(ctx, query, username).Scan(
+		&u.ID,
+		&u.Username,
+		&u.Password,
+		&u.RoleId,
+		&u.Role,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
 }

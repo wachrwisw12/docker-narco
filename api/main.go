@@ -32,6 +32,7 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*", // หรือกำหนดเป็น "http://localhost:5173"
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 	// test add api
 	routers.SetupRoute(app)

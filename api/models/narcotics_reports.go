@@ -1,7 +1,12 @@
 package models
 
+import "time"
+
 type NacorticsReport struct {
-	ID           string `json:"id"`
-	Details      string `json:"details"`
+	ID           int8   `json:"id"`
 	TrackingCode string `json:"tracking_code"`
+	// Category     string `json:"category"`
+	Details   string     `json:"details"`
+	Status    string     `json:"status"`
+	CreatedAt *time.Time `json:"created_at"`
 }

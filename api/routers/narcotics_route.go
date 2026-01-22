@@ -2,12 +2,17 @@ package routers
 
 import (
 	handlers "api-naco/handlers"
+	middlewares "api-naco/midleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func SetupNarcoticsReport(nacoticRoute fiber.Router) {
-	nacoticRoute.Post("/sendreport", handlers.SendReport)
+	nacoticRoute.Post("/sendreport", middlewares.JWTMiddleware(), handlers.SendReport)
+	nacoticRoute.Get("/reportInit", handlers.ReportInit)
+	nacoticRoute.Get("/reports", handlers.ListReports)
+	nacoticRoute.Get("/track/:tracking_code", middlewares.JWTMiddleware(), handlers.TrackReport)
+	nacoticRoute.Get("/app-init", middlewares.OptionalJWT(), handlers.AppInit)
 
 	nacoticRoute.Get("/test", handlers.Test)
 }
